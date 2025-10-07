@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Principal</title>
+    <!-- Links -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <!-- Link para o nosso arquivo de estilo compartilhado -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos adicionais para o novo tema */
+        .main-menu-bg {
+            background-color: #000000;
+        }
+        .retro-title {
+            font-family: 'Press Start 2P', cursive;
+            color: #00d9ff; /* Gamer Blue */
+            text-shadow: 2px 2px #000;
+            font-size: 2.25rem; /* text-4xl */
+        }
+        .retro-button {
+            font-family: 'Press Start 2P', cursive;
+            background-color: transparent;
+            border: 3px solid #00d9ff; /* Gamer Blue */
+            color: #00d9ff; /* Gamer Blue */
+            padding: 1rem 2rem;
+            text-transform: uppercase;
+            transition: all 0.2s ease-in-out;
+            text-align: center;
+        }
+        .retro-button:hover {
+            background-color: #00d9ff; /* Gamer Blue */
+            color: #000000;
+            text-shadow: none;
+        }
+        .retro-button-disabled {
+             font-family: 'Press Start 2P', cursive;
+            background-color: transparent;
+            border: 3px solid #4b5563; /* gray-600 */
+            color: #4b5563; /* gray-600 */
+            padding: 1rem 2rem;
+            text-transform: uppercase;
+            cursor: not-allowed;
+            text-align: center;
+        }
+        
+        /* Efeito de Tela Antiga */
+        @keyframes flicker {
+            0%, 100% { opacity: 0.95; }
+            50% { opacity: 1; }
+        }
+
+        .scanlines {
+            position: relative;
+            overflow: hidden;
+            animation: flicker 0.1s infinite;
+        }
+
+        .scanlines::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.4) 0px,
+                rgba(0, 0, 0, 0.4) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 main-menu-bg scanlines">
+
+    <!-- Tela 1: Menu Principal -->
+    <section id="main-menu" class="flex flex-col items-center justify-center gap-8 w-full max-w-sm">
+        <!-- Menu de Opções -->
+        <h1 class="retro-title text-center">GAME DECK</h1>
+        <div class="flex flex-col gap-4 w-full">
+            <a href="games.html" class="retro-button no-underline">Jogar</a>
+            <a href="#" class="retro-button-disabled no-underline">Continuar</a>
+            <a href="catalog.html" class="retro-button no-underline">Catálogo</a>
+            <a href="#" class="retro-button-disabled no-underline">Opções</a>
+        </div>
+    </section>
+
+</body>
+</html>
+

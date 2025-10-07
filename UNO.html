@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNO No Mercy - Edição Lendária</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        @keyframes screenFlash {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.7; }
+        }
+        @keyframes bubblePop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            touch-action: manipulation;
+            background-color: #374151; /* bg-gray-700 */
+            transition: background-color 1s ease-in-out;
+        }
+
+        .background-red { background-color: #7f1d1d !important; }
+        .background-blue { background-color: #1e3a8a !important; }
+        .background-green { background-color: #14532d !important; }
+        .background-yellow { background-color: #854d0e !important; }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: 150px 1fr 150px;
+            grid-template-rows: 150px auto 220px;
+            gap: 1rem;
+            width: 100%;
+            max-width: 1200px;
+            height: 95vh;
+            padding: 1rem;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .grid-cell {
+            border-radius: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.5s ease;
+            position: relative;
+        }
+
+        .card {
+            width: 70px;
+            height: 105px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            border: 2px solid white;
+        }
+        .card.flying {
+            position: fixed;
+            z-index: 1000;
+            transition: top 0.4s ease-out, left 0.4s ease-out, transform 0.4s ease-out;
+        }
+
+        .hand-area .card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .card .value { text-shadow: 1px 1px 3px rgba(0,0,0,0.7); }
+        .card .corner { position: absolute; font-size: 12px; font-weight: 600; }
+        .card .top-left { top: 4px; left: 6px; }
+        .card .bottom-right { bottom: 4px; right: 6px; transform: rotate(180deg); }
+
+        .card-red { background-color: #EF4444; }
+        .card-blue { background-color: #3B82F6; }
+        .card-green { background-color: #22C55E; }
+        .card-yellow { background-color: #F59E0B; }
+        .card-special { background: radial-gradient(circle, #71717A, #27272A); }
+        .wild-bg { background: conic-gradient(from 180deg at 50% 50%, #EF4444 0deg, #F59E0B 90deg, #22C55E 180deg, #3B82F6 270deg, #EF4444 360deg); }
+
+        .hand-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 5px;
+            gap: 5px;
+            width: 100%;
+            min-height: 120px;
+        }
+
+        .player-hand .card { margin-left: -30px; }
+        .player-hand .card:first-child { margin-left: 0; }
+        .bot-hand-vertical .card { margin-bottom: -85px; }
+        .bot-hand-horizontal .card { margin-left: -50px; }
+
+        .bot-card {
+            background-color: #4A4A4A;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='90' viewBox='0 0 60 90' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 C10 0 0 10 0 30 C0 50 10 90 30 90 S60 50 60 30 C60 10 50 0 30 0 Z' fill='%23FFFFFF' fill-opacity='0.6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 50%;
+        }
+
+        #sequence-area {
+            border: 2px dashed #FBBF24;
+            min-width: 300px;
+            min-height: 125px;
+            background-color: rgba(251, 191, 36, 0.1);
+        }
+
+        #play-sequence-btn {
+            background-color: #16A34A; /* green-600 */
+            padding: 1rem 1.5rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        #play-sequence-btn:hover { background-color: #15803D; }
+        #play-sequence-btn:disabled { background-color: #4B5563; cursor: not-allowed; }
+
+        .modal { transition: opacity 0.3s ease; }
+        .player-active { box-shadow: 0 0 20px 5px #FBBF24; transform: scale(1.02); }
+        .player-title { font-weight: bold; text-align: center; margin-bottom: 0.5rem; }
+        .eliminated { background-color: rgba(0,0,0,0.6) !important; opacity: 0.7; }
+        .eliminated .player-title { text-decoration: line-through; }
+        .finished { background-color: rgba(202, 138, 4, 0.3) !important; }
+
+        #draw-stack-indicator {
+            position: absolute; width: 80px; height: 80px;
+            background-color: rgba(239, 68, 68, 0.7); border: 4px solid white;
+            border-radius: 50%; z-index: 50; pointer-events: none;
+            transition: top 0.5s ease, left 0.5s ease, transform 0.5s ease;
+            animation: pulse 1.5s infinite; display: none;
+        }
+
+        #toast-notification, .speech-bubble {
+            transition: opacity 0.5s ease;
+        }
+
+        .speech-bubble {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #1f2937;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            max-width: 140px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 200;
+            animation: bubblePop 0.3s ease-out;
+        }
+        #bubble-1 { bottom: -25px; left: 50%; transform: translateX(-50%); }
+        #bubble-2 { top: -25px; left: 50%; transform: translateX(-50%); }
+        #bubble-3 { bottom: -25px; left: 50%; transform: translateX(-50%); }
+
+        #screen-flash {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: white; z-index: 9999; pointer-events: none;
+            opacity: 0;
+        }
+        #screen-flash.flash { animation: screenFlash 0.5s ease-out; }
+    </style>
+</head>
+<body id="body-background" class="bg-gray-800 text-white flex items-center justify-center min-h-screen">
+    <div id="screen-flash"></div>
+    <div id="game-board" class="hidden">
+        <div id="draw-stack-indicator"></div>
+        <div id="player-2-area" class="grid-cell" style="grid-area: 1 / 2 / 2 / 3;">
+            <p id="name-2" class="player-title">Bot 2 (<span id="card-count-2">7</span>)</p>
+            <div id="hand-2" class="hand-area bot-hand-horizontal"></div>
+            <div id="bubble-2" class="speech-bubble hidden"></div>
+        </div>
+        <div id="player-1-area" class="grid-cell" style="grid-area: 1 / 1 / 3 / 2;">
+            <p id="name-1" class="player-title">Bot 1 (<span id="card-count-1">7</span>)</p>
+            <div id="hand-1" class="hand-area bot-hand-vertical"></div>
+            <div id="bubble-1" class="speech-bubble hidden"></div>
+        </div>
+        <div class="grid-cell" style="grid-area: 2 / 2 / 3 / 3; flex-direction: column; gap: 1rem;">
+             <div class="flex items-center justify-center gap-8">
+                <div class="text-center">
+                    <p class="font-semibold mb-2">Comprar</p>
+                    <div id="deck-pile"><div class="card bot-card"></div></div>
+                </div>
+                <div class="text-center">
+                    <p class="font-semibold mb-2">Descarte</p>
+                    <div id="discard-pile" class="w-[70px] h-[105px]"></div>
+                </div>
+             </div>
+             <div id="color-status-container" class="flex items-center gap-2 mt-2">
+                <div id="color-status-indicator" class="w-6 h-6 rounded-full border-2 border-white"></div>
+                <p id="color-status-text" class="font-semibold text-lg"></p>
+             </div>
+        </div>
+        <div id="player-3-area" class="grid-cell" style="grid-area: 1 / 3 / 3 / 4;">
+            <p id="name-3" class="player-title">Bot 3 (<span id="card-count-3">7</span>)</p>
+            <div id="hand-3" class="hand-area bot-hand-vertical"></div>
+            <div id="bubble-3" class="speech-bubble hidden"></div>
+        </div>
+        <div id="player-0-area" class="grid-cell" style="grid-area: 3 / 1 / 4 / 4; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch;">
+            <div id="game-status" class="text-center text-lg font-semibold mb-2">Comece o jogo!</div>
+            <div class="w-full flex items-end justify-center gap-4">
+                <div class="flex-grow p-2 rounded-lg bg-black bg-opacity-20" style="min-width: 0;">
+                    <p id="name-0" class="font-semibold text-center mb-1 text-sm">Sua Mão (<span id="card-count-0">7</span>)</p>
+                    <div id="hand-0" class="hand-area player-hand justify-start"></div>
+                </div>
+                <div class="text-center flex-shrink-0">
+                    <p class="font-semibold text-sm">Armar Sequência</p>
+                    <div id="sequence-area" class="hand-area rounded-lg"></div>
+                </div>
+                <div class="flex flex-col gap-2 flex-shrink-0">
+                    <button id="play-sequence-btn">Jogar<br>Sequência</button>
+                    <button id="uno-button" class="px-6 py-2 bg-yellow-500 text-black font-bold rounded-lg shadow-md hover:bg-yellow-400 transition disabled:bg-gray-500 disabled:cursor-not-allowed text-2xl">UNO!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals and Notifications -->
+    <div id="name-modal" class="modal fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+        <div class="bg-gray-700 p-8 rounded-xl shadow-2xl text-center">
+            <h3 class="text-2xl font-bold mb-6">Qual é o seu nome, desafiante?</h3>
+            <input type="text" id="player-name-input" class="w-full bg-gray-800 text-white text-center text-xl p-2 rounded mb-4" placeholder="Digite seu nome" maxlength="15">
+            <button id="start-game-btn" class="w-full px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:bg-green-500 transition">Começar a Batalha!</button>
+        </div>
+    </div>
+    <div id="toast-notification" class="hidden opacity-0 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-80 text-white text-2xl font-bold p-6 rounded-lg shadow-xl z-50"></div>
+    <div id="color-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+         <div class="bg-gray-700 p-8 rounded-xl shadow-2xl text-center">
+            <h3 class="text-2xl font-bold mb-6">Escolha uma Cor</h3>
+            <div class="flex gap-4">
+                <button class="color-btn w-20 h-20 rounded-full bg-red-500 hover:scale-110 transition" data-color="red"></button>
+                <button class="color-btn w-20 h-20 rounded-full bg-blue-500 hover:scale-110 transition" data-color="blue"></button>
+                <button class="color-btn w-20 h-20 rounded-full bg-green-500 hover:scale-110 transition" data-color="green"></button>
+                <button class="color-btn w-20 h-20 rounded-full bg-yellow-500 hover:scale-110 transition" data-color="yellow"></button>
+            </div>
+        </div>
+    </div>
+    <div id="swap-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-gray-700 p-8 rounded-xl shadow-2xl text-center">
+            <h3 class="text-2xl font-bold mb-6">Trocar de mão com:</h3>
+            <div id="swap-options" class="flex gap-4"></div>
+        </div>
+    </div>
+    <div id="game-over-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-gray-700 p-8 rounded-xl shadow-2xl text-center max-w-sm">
+            <h3 id="game-over-title" class="text-3xl font-bold mb-4">Fim da Partida!</h3>
+            <div id="ranking-list" class="text-xl mb-6 space-y-2"></div>
+            <button id="play-again-btn" class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-500 transition">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameBoard = document.getElementById('game-board');
+            const playerHands = [ document.getElementById('hand-0'), document.getElementById('hand-1'), document.getElementById('hand-2'), document.getElementById('hand-3') ];
+            const playerAreas = [ document.getElementById('player-0-area'), document.getElementById('player-1-area'), document.getElementById('player-2-area'), document.getElementById('player-3-area') ];
+            const nameEls = [ document.getElementById('name-0'), document.getElementById('name-1'), document.getElementById('name-2'), document.getElementById('name-3') ];
+            const speechBubbles = [ null, document.getElementById('bubble-1'), document.getElementById('bubble-2'), document.getElementById('bubble-3') ];
+            const discardPileEl = document.getElementById('discard-pile');
+            const deckPileEl = document.getElementById('deck-pile');
+            const colorModal = document.getElementById('color-modal');
+            const swapModal = document.getElementById('swap-modal');
+            const gameOverModal = document.getElementById('game-over-modal');
+            const gameStatusEl = document.getElementById('game-status');
+            const unoButton = document.getElementById('uno-button');
+            const sequenceArea = document.getElementById('sequence-area');
+            const playSequenceBtn = document.getElementById('play-sequence-btn');
+            const colorStatusIndicator = document.getElementById('color-status-indicator');
+            const colorStatusText = document.getElementById('color-status-text');
+            const drawStackIndicator = document.getElementById('draw-stack-indicator');
+            const toastEl = document.getElementById('toast-notification');
+            const bodyBg = document.getElementById('body-background');
+            const screenFlashEl = document.getElementById('screen-flash');
+            const nameModal = document.getElementById('name-modal');
+            const startGameBtn = document.getElementById('start-game-btn');
+            const playerNameInput = document.getElementById('player-name-input');
+            
+            let deck = [], hands = [[], [], [], []], sequence = [], discardPile = [];
+            let currentPlayerIndex = 0, gameDirection = 1, drawStack = 0, turnCount = 0;
+            let isGameOver = false, unoCalled = [false, false, false, false], hasDrawnThisTurn = false;
+            let eliminatedPlayers = [false, false, false, false], ranking = [];
+            let airtonEventTriggered = false;
+            let idleChatterTimeout;
+
+            const BOT_NAMES = ['Melanie', 'Vinicius', 'Ana', 'Clenilda', 'Lucas', 'Airton', 'João', 'Juarez', 'André', 'David', 'Carol', 'Heloisa', 'Gabriel', 'Andreia', 'Cesar', 'Luiza', 'Raquel', 'Henrique', 'Jair', 'Pietra', 'Maria', 'Robert'];
+            const FEMALE_NAMES = ['Melanie', 'Ana', 'Clenilda', 'Carol', 'Heloisa', 'Andreia', 'Luiza', 'Raquel', 'Pietra', 'Maria'];
+            let playerNames = [];
+            
+            const BOT_COMMENTS = {
+                onDraw: (name) => [`Ah não! +${drawStack} para mim?`, `Isso é crueldade, ${name}!`, `Vou precisar de uma mão maior...`, `É sério isso?!`],
+                onActionCard: (target, actor) => [`Que isso, ${actor}?! Não te fiz nada!`, `Já me bloqueia, ${actor}?`, `Toma essa de volta depois!`],
+                onActionCardObservation: (target) => [`${target}, não chora!`, `Aceita que dói menos, ${target}.`, `Bem-vindo ao jogo!`],
+                onSeven: (targetName) => [`OPS, vou pegar essas cartas, ${targetName}!`, `Vamos ver o que você tem aí...`, `Trocar é bom!`],
+                onZero: () => [`Gira, gira!`, `Dança das cadeiras!`, `Adeus, minhas cartinhas...`],
+                onWait: (targetName) => [`Joga logo, ${targetName}!`, `Estamos esperando...`, `O tempo está passando...`, `Você está dormindo hein, ${targetName}?`],
+                generic: () => [`Hmm...`, `Essa cor de novo?`, `Ai, credo!`, `Alguém muda esse jogo!`, `Estou de olho em você...`],
+                banter_starter: ["Vou ganhar essa hein!", "Fácil demais!", "Alguém aí sabe jogar?"],
+                banter_reply: ["Dessa não viu, Bostil.", "Sonha!", "Menos, bem menos...", "Até parece!"],
+                elimination_comment: (name) => [`Vish, ${name} caiu hein.`, `Menos um!`, `Adeus, ${name}!`],
+                airton: {
+                    intro: {
+                        melanie: "Gente… é ele. O Airton. O mito. O meme.",
+                        vinicius: "Airton saiu da geladeira e veio jogar? Alguém segura esse homem!",
+                        airton: "Cheguei. E já tô arrependido."
+                    },
+                    onPlus4: {
+                        melanie: "Airton joga +4 como quem manda nudes: sem aviso e com impacto.",
+                        vinicius: "Isso foi agressivo. Meu coração tá em modo defesa.",
+                        airton: "Só tô aquecendo. Espera o +10."
+                    },
+                    manyCards: [ "Minha mão virou uma biblioteca do caos!", "Se eu tossir, sai uma carta!", "Tô jogando ou fazendo estoque?", "Preciso de um carrinho de supermercado!", "Isso aqui é um castigo divino!", "Já posso abrir uma franquia de UNO!"],
+                    manyCardsObserver: ["Que isso, Airton? Tá montando o próprio baralho? 😂", "Ele tá tentando desbloquear o modo ‘livraria’!"],
+                    swapPlayer: {
+                        melanie: "Airton tá roubando do humano? Isso é golpe!",
+                        vinicius: "Ele tá jogando Monopoly com regras próprias!",
+                        airton: "Redistribuição de cartas. É política interna."
+                    },
+                    swapBot: (targetName) => { return {
+                        actor: `Você vai se arrepender, ${targetName}… ou não. Provavelmente não.`,
+                        target: `OPS! Vou pegar essas cartinhas, Airton!`
+                    }},
+                    teased: ["Vocês são o Wi-Fi fraco da minha vida.", "Minha paciência tá em modo avião.", "Tô aqui só pela treta e pelo drama."],
+                    teasing: ["Airton, você joga como quem tá escrevendo um livro de autoajuda.", "Ele tá esperando a carta ‘milagre’ desde 2007."],
+                    strategy: ["Tudo sob controle… mais ou menos… quase.", "Minha estratégia é o caos com glitter.", "Confia no plano. Nem eu confio, mas confia."],
+                    strategyObserver: ["Airton tá calculando ou só travou?", "Ele tá jogando xadrez com UNO!"]
+                }
+            };
+
+            const COLORS = ['red', 'blue', 'green', 'yellow'];
+            const VALUES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Skip', '+2', 'Reverse'];
+            
+            function createDeck() {
+                deck = [];
+                for (const color of COLORS) {
+                    for (const value of VALUES) { deck.push({ color, value }); if (value !== '0' && value !== '7') deck.push({ color, value }); }
+                    deck.push({color, value: '+4'});
+                }
+                for (let i = 0; i < 4; i++) deck.push({ color: 'special', value: 'Wild' });
+                for (let i = 0; i < 4; i++) deck.push({ color: 'special', value: 'Wild+4' });
+                for (let i = 0; i < 2; i++) deck.push({ color: 'special', value: 'Wild+6' });
+                for (let i = 0; i < 2; i++) deck.push({ color: 'special', value: 'Wild+10' });
+                for (let i = 0; i < 2; i++) deck.push({ color: 'special', value: 'SkipAll' });
+                for (const color of COLORS) deck.push({ color, value: 'DiscardAll' });
+                for (let i = 0; i < 4; i++) deck.push({ color: 'special', value: 'ColorRoulette' });
+            }
+
+            function shuffleDeck(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            function dealCards() {
+                hands = [[], [], [], []];
+                for (let i = 0; i < 7; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        if(deck.length > 0) hands[j].push(deck.pop());
+                    }
+                }
+            }
+
+            startGameBtn.addEventListener('click', () => {
+                const playerName = playerNameInput.value.trim() || 'Jogador';
+                playerNames[0] = playerName;
+                nameModal.classList.add('hidden');
+                gameBoard.classList.remove('hidden');
+                startGame();
+            });
+
+            function startGame() {
+                let availableNames = [...BOT_NAMES];
+                let botPool = [];
+
+                const airtonAvailable = availableNames.includes('Airton');
+                const melanieAvailable = availableNames.includes('Melanie');
+                const viniciusAvailable = availableNames.includes('Vinicius');
+
+                if (airtonAvailable && melanieAvailable && viniciusAvailable && Math.random() < 0.4) {
+                    botPool = ['Airton', 'Melanie', 'Vinicius'];
+                    availableNames = availableNames.filter(n => !botPool.includes(n));
+                } else {
+                    availableNames = availableNames.filter(n => n !== 'Airton');
+                    for(let i=0; i<3; i++){
+                        const randIndex = Math.floor(Math.random() * availableNames.length);
+                        botPool.push(availableNames.splice(randIndex, 1)[0]);
+                    }
+                }
+
+                shuffleDeck(botPool);
+                for(let i = 1; i < 4; i++){
+                    playerNames[i] = botPool[i-1];
+                }
+                
+                isGameOver = false;
+                airtonEventTriggered = false;
+                ranking = [];
+                turnCount = 0;
+                currentPlayerIndex = 0;
+                gameDirection = 1;
+                drawStack = 0;
+                unoCalled = [false, false, false, false];
+                eliminatedPlayers = [false, false, false, false];
+                sequence = [];
+                discardPile = [];
+                
+                playerAreas.forEach((area) => area.classList.remove('eliminated', 'finished'));
+                
+                createDeck();
+                shuffleDeck(deck);
+                dealCards();
+                
+                let firstCard;
+                do {
+                    if (deck.length === 0) createDeck();
+                    firstCard = deck.pop();
+                } while (firstCard.color === 'special');
+                discardPile.push(firstCard);
+
+                const preposition = FEMALE_NAMES.includes(playerNames[0]) ? 'da' : 'do';
+                updateStatus(`Começa a batalha! É a vez ${preposition} ${playerNames[0]}.`);
+                renderAll();
+                gameOverModal.classList.add('hidden');
+                setTimeout(playerTurn, 1000);
+            }
+            
+            async function animateCardPlay(cardHTML, originEl, targetEl) {
+                if (!cardHTML || !cardHTML.trim()) return;
+                const originRect = originEl.getBoundingClientRect();
+                const targetRect = targetEl.getBoundingClientRect();
+                
+                const flyingCard = document.createElement('div');
+                flyingCard.innerHTML = cardHTML;
+                const flyingEl = flyingCard.firstElementChild;
+                if (!flyingEl) return;
+
+                flyingEl.classList.add('flying');
+                document.body.appendChild(flyingEl);
+                
+                flyingEl.style.top = `${originRect.top + (originRect.height / 2) - 52.5}px`;
+                flyingEl.style.left = `${originRect.left + (originRect.width / 2) - 35}px`;
+                
+                await new Promise(r => setTimeout(r, 10));
+
+                flyingEl.style.top = `${targetRect.top + (targetRect.height / 2) - 52.5}px`;
+                flyingEl.style.left = `${targetRect.left + (targetRect.width / 2) - 35}px`;
+                flyingEl.style.transform = 'scale(1)';
+                
+                await new Promise(r => setTimeout(r, 400));
+                flyingEl.remove();
+            }
+
+            function flashScreen() {
+                screenFlashEl.classList.add('flash');
+                setTimeout(() => screenFlashEl.classList.remove('flash'), 500);
+            }
+
+            function showBotComment(botIndex, comment) {
+                const bubble = speechBubbles[botIndex];
+                if (!bubble) return;
+
+                bubble.textContent = comment;
+                bubble.classList.remove('hidden');
+
+                setTimeout(() => bubble.classList.add('hidden'), 7000);
+            }
+            
+            function renderCard(card) {
+                if (!card) return '';
+                let colorClass;
+                if (card.color === 'special') {
+                    colorClass = 'card-special';
+                } else {
+                    colorClass = `card-${card.color}`;
+                }
+
+                let valueDisplay = card.value;
+                 if (card.value === 'Wild+4') valueDisplay = 'W+4';
+                 if (card.value === 'Wild+6') valueDisplay = '+6';
+                 if (card.value === 'Wild+10') valueDisplay = '+10';
+                 if (card.value === 'SkipAll') valueDisplay = '🚫';
+                 if (card.value === 'DiscardAll') valueDisplay = '♻️';
+                 if (card.value === 'ColorRoulette') valueDisplay = '🎨';
+                 if (card.value === 'Skip') valueDisplay = '🚫';
+                 if (card.value === 'Reverse') valueDisplay = '🔄';
+
+                return `<div class="card ${colorClass}" data-color="${card.color}" data-value="${card.value}" data-original-color="${card.originalColor || card.color}">
+                           <span class="corner top-left">${valueDisplay}</span>
+                           <span class="value">${valueDisplay}</span>
+                           <span class="corner bottom-right">${valueDisplay}</span>
+                        </div>`;
+            }
+
+            function updateColorStatus() {
+                const topCard = discardPile[discardPile.length - 1];
+                if (!topCard) return;
+                const colorMap = {
+                    red: { bg: 'bg-red-500', text: 'Vermelho' },
+                    blue: { bg: 'bg-blue-500', text: 'Azul' },
+                    green: { bg: 'bg-green-500', text: 'Verde' },
+                    yellow: { bg: 'bg-yellow-500', text: 'Amarelo' },
+                };
+                const activeColor = topCard.color;
+                if(colorMap[activeColor]) {
+                    colorStatusIndicator.className = `w-6 h-6 rounded-full border-2 border-white ${colorMap[activeColor].bg}`;
+                    colorStatusText.textContent = `Cor Ativa: ${colorMap[activeColor].text}`;
+                } else {
+                    colorStatusIndicator.className = 'w-6 h-6 rounded-full border-2 border-white bg-gray-600';
+                    colorStatusText.textContent = 'Cor Ativa: Nenhuma';
+                }
+            }
+            
+            function updateDrawStackIndicator() {
+                if (drawStack > 0) {
+                    const targetIndex = getNextPlayerIndex(true);
+                    const targetArea = playerAreas[targetIndex];
+                    if(targetArea){
+                        const rect = targetArea.getBoundingClientRect();
+                        const boardRect = document.getElementById('game-board').getBoundingClientRect();
+                        
+                        drawStackIndicator.style.display = 'block';
+                        drawStackIndicator.style.top = `${rect.top - boardRect.top + rect.height / 2 - 40}px`;
+                        drawStackIndicator.style.left = `${rect.left - boardRect.left + rect.width / 2 - 40}px`;
+                    }
+                } else {
+                    drawStackIndicator.style.display = 'none';
+                }
+            }
+            
+            function renderAll() {
+                const topCard = discardPile[discardPile.length - 1];
+                bodyBg.className = `bg-gray-800 text-white flex items-center justify-center min-h-screen background-${topCard?.color || 'gray-800'}`;
+                playerHands[0].innerHTML = hands[0].map(renderCard).join('');
+                sequenceArea.innerHTML = sequence.map(renderCard).join('');
+                
+                for (let i = 0; i < 4; i++) {
+                    const cardCount = hands[i]?.length || 0;
+                    const nameEl = nameEls[i];
+                    const rank = ranking.findIndex(p => p.index === i);
+                    let rankDisplay = '';
+                    if (rank !== -1) {
+                        const medals = ['🥇', '🥈', '🥉'];
+                        rankDisplay = medals[rank] || ` #${rank + 1}`;
+                    }
+                    nameEl.innerHTML = `${rankDisplay} ${playerNames[i]} (<span id="card-count-${i}">${cardCount}</span>)`;
+                    if(i > 0) {
+                        if (eliminatedPlayers[i]) playerHands[i].innerHTML = '<p class="text-xl font-bold">ELIMINADO</p>';
+                        else if (rank !== -1) playerHands[i].innerHTML = `<p class="text-2xl font-bold">${rankDisplay}</p>`;
+                        else playerHands[i].innerHTML = Array(Math.min(cardCount, 7)).fill('<div class="card bot-card"></div>').join('');
+                    }
+                }
+                
+                discardPileEl.innerHTML = renderCard(topCard);
+                if (topCard && topCard.originalColor === 'special') discardPileEl.firstElementChild?.classList.add('wild-bg');
+                
+                deckPileEl.innerHTML = deck.length > 0 ? '<div class="card bot-card"></div>' : '';
+                playerAreas.forEach((el, i) => {
+                    el.classList.remove('player-active', 'finished');
+                    if (eliminatedPlayers[i]) el.classList.add('eliminated');
+                    if (ranking.some(p => p.index === i)) el.classList.add('finished');
+                });
+                if(!isGameOver && !eliminatedPlayers[currentPlayerIndex] && !ranking.some(p=>p.index===currentPlayerIndex)) {
+                    playerAreas[currentPlayerIndex].classList.add('player-active');
+                }
+                unoButton.disabled = (hands[0].length + sequence.length) !== 2;
+                playSequenceBtn.disabled = sequence.length === 0;
+                updateColorStatus();
+                updateDrawStackIndicator();
+            }
+            
+            function updateStatus(message) { gameStatusEl.textContent = message; }
+
+            let toastTimeout;
+            function showToast(message) {
+                clearTimeout(toastTimeout);
+                toastEl.textContent = message;
+                toastEl.classList.remove('hidden', 'opacity-0');
+                toastTimeout = setTimeout(() => {
+                    toastEl.classList.add('opacity-0');
+                    setTimeout(() => toastEl.classList.add('hidden'), 500);
+                }, 2000);
+            }
+
+            function stageCard(cardIndex) {
+                if (currentPlayerIndex !== 0) return;
+                sequence.push(hands[0].splice(cardIndex, 1)[0]);
+                renderAll();
+            }
+
+            function unstageCard(cardIndex) {
+                 if (currentPlayerIndex !== 0) return;
+                hands[0].push(sequence.splice(cardIndex, 1)[0]);
+                renderAll();
+            }
+
+            playerHands[0].addEventListener('click', e => {
+                const cardEl = e.target.closest('.card');
+                if (!cardEl) return;
+                const cardValue = cardEl.dataset.value;
+                const originalColor = cardEl.dataset.originalColor;
+                const cardIndex = hands[0].findIndex(c => c.value === cardValue && (c.originalColor || c.color) === originalColor);
+                if (cardIndex > -1) stageCard(cardIndex);
+            });
+
+            sequenceArea.addEventListener('click', e => {
+                 const cardEl = e.target.closest('.card');
+                if (!cardEl) return;
+                const cardValue = cardEl.dataset.value;
+                const originalColor = cardEl.dataset.originalColor;
+                const cardIndex = sequence.findIndex(c => c.value === cardValue && (c.originalColor || c.color) === originalColor);
+                if (cardIndex > -1) unstageCard(cardIndex);
+            });
+            
+            deckPileEl.addEventListener('click', () => {
+                if (currentPlayerIndex !== 0 || isGameOver) return;
+                if (hasDrawnThisTurn) { nextTurn(); return; }
+                if (drawStack > 0) {
+                    drawCards(0, drawStack);
+                    drawStack = 0;
+                    nextTurn();
+                } else {
+                    drawCards(0, 1, true);
+                    hasDrawnThisTurn = true;
+                    updateStatus("Você comprou uma carta. Jogue ou clique em comprar para passar.");
+                }
+            });
+
+            playSequenceBtn.addEventListener('click', async () => {
+                clearTimeout(idleChatterTimeout);
+                if (currentPlayerIndex !== 0 || sequence.length === 0) return;
+                if (!isSequenceValid()) {
+                    updateStatus("Sequência inválida!");
+                    hands[0].push(...sequence.splice(0));
+                    renderAll();
+                    return;
+                }
+                const totalCardsBeforePlay = hands[0].length + sequence.length;
+                if (hands[0].length === 1 && totalCardsBeforePlay > 1 && !unoCalled[0]) {
+                    updateStatus("Não gritou UNO! Compre 2 cartas.");
+                    drawCards(0, 2);
+                }
+                
+                const tempSequence = [...sequence];
+                sequence = [];
+                const originEl = playerAreas[0];
+
+                for(let i=0; i < tempSequence.length; i++){
+                    const card = tempSequence[i];
+                    await animateCardPlay(renderCard(card), originEl, discardPileEl);
+                    discardPile.push(card);
+                    renderAll();
+                }
+
+                if (hands[0].length === 0) {
+                    endGame(0);
+                    return;
+                }
+                handleCardEffect(tempSequence[tempSequence.length - 1], 0);
+            });
+            
+            document.getElementById('play-again-btn').addEventListener('click', () => {
+                gameOverModal.classList.add('hidden');
+                nameModal.classList.remove('hidden');
+            });
+            unoButton.addEventListener('click', () => {
+                if((hands[0].length + sequence.length) === 2 && currentPlayerIndex === 0) {
+                    unoCalled[0] = true;
+                    updateStatus("Você gritou UNO!");
+                    unoButton.classList.add('bg-green-500', 'text-white');
+                }
+            });
+
+            function isPlayableOnTop(card) {
+                const topCard = discardPile[discardPile.length - 1];
+                if (drawStack > 0) return ['+2', '+4', 'Wild+4', 'Wild+6', 'Wild+10'].includes(card.value);
+                const isNumericCard = !isNaN(parseInt(card.value));
+                const isNumericTopCard = !isNaN(parseInt(topCard.value));
+                let isSequential = isNumericCard && isNumericTopCard && Math.abs(parseInt(card.value) - parseInt(topCard.value)) === 1;
+                return card.color === 'special' || card.color === topCard.color || card.value === topCard.value || isSequential;
+            }
+
+            function isSequenceValid() {
+                if (!isPlayableOnTop(sequence[0])) return false;
+                for (let i = 1; i < sequence.length; i++) {
+                    const prev = sequence[i - 1]; const curr = sequence[i];
+                    const prevVal = parseInt(prev.value); const currVal = parseInt(curr.value);
+                    const isNumeric = !isNaN(prevVal) && !isNaN(currVal);
+                    const isSameValue = prev.value === curr.value;
+                    const isSequential = isNumeric && Math.abs(prevVal - currVal) === 1;
+                    if (!isSameValue && !isSequential) return false;
+                }
+                return true;
+            }
+            
+            function drawCards(playerIndex, amount, isVoluntary = false) {
+                if (!isVoluntary && amount > 0) showToast(`${playerNames[playerIndex]} comprou ${amount} carta(s)!`);
+                for (let i = 0; i < amount; i++) {
+                    if (deck.length === 0) {
+                         if (discardPile.length <= 1) break;
+                         deck = discardPile.slice(0, -1).map(c => {
+                             const cleanCard = { ...c };
+                             if (cleanCard.value.includes('Wild') || cleanCard.value === 'ColorRoulette') cleanCard.color = 'special';
+                             delete cleanCard.originalColor;
+                             return cleanCard;
+                         });
+                         shuffleDeck(deck);
+                         discardPile = [discardPile[discardPile.length-1]];
+                    }
+                     if(deck.length > 0) hands[playerIndex].push(deck.pop());
+                }
+                renderAll();
+                checkMercyRule(playerIndex);
+            }
+
+            function nextTurn() {
+                hasDrawnThisTurn = false;
+                unoCalled[currentPlayerIndex] = false;
+                if(currentPlayerIndex === 0) unoButton.classList.remove('bg-green-500', 'text-white');
+                
+                turnCount++;
+                const activePlayerCount = [0,1,2,3].filter(i => !eliminatedPlayers[i] && !ranking.some(p=>p.index===i)).length;
+                if (activePlayerCount <= 1) {
+                    endGame();
+                    return;
+                }
+
+                currentPlayerIndex = getNextPlayerIndex();
+                renderAll();
+                setTimeout(playerTurn, 2000);
+            }
+
+            function playerTurn() {
+                if (isGameOver) return;
+                const playerIndex = currentPlayerIndex;
+                if (ranking.some(p => p.index === playerIndex)) { nextTurn(); return; }
+                
+                if(turnCount === 2 && !airtonEventTriggered && playerNames.includes('Airton')) {
+                    airtonEventTriggered = true;
+                    triggerAirtonEvent();
+                }
+
+                if (playerIndex === 0) {
+                    if (drawStack > 0) {
+                        const hasCounter = hands[0].some(c => ['+2', '+4', 'Wild+4', 'Wild+6', 'Wild+10'].includes(c.value));
+                        updateStatus(hasCounter ? `Pilha de +${drawStack}! Revide ou compre.` : `Pilha de +${drawStack}! Você deve comprar.`);
+                    } else updateStatus("Sua vez de jogar.");
+                    
+                    clearTimeout(idleChatterTimeout);
+                    idleChatterTimeout = setTimeout(triggerIdleBanter, 7000 + Math.random() * 3000);
+
+                } else {
+                    const preposition = FEMALE_NAMES.includes(playerNames[playerIndex]) ? 'da' : 'do';
+                    updateStatus(`Vez ${preposition} ${playerNames[playerIndex]}.`);
+                    setTimeout(() => botPlay(playerIndex), 1000 + Math.random() * 1000);
+                }
+            }
+
+            function botPlay(playerIndex) {
+                const botHand = hands[playerIndex];
+                let potentialPlays = botHand.map((card, index) => ({ card, index }))
+                                     .filter(item => isPlayableOnTop(item.card));
+
+                if (potentialPlays.length > 0) {
+                    const wild4Play = potentialPlays.find(p => p.card.value === 'Wild+4');
+                    if (wild4Play) {
+                        const topCard = discardPile[discardPile.length - 1];
+                        const hasMatchingColor = botHand.some(c => c.color === topCard.color);
+                        if (hasMatchingColor) {
+                            potentialPlays = potentialPlays.filter(p => p.card.value !== 'Wild+4');
+                        }
+                    }
+                    if (potentialPlays.length === 0) {
+                         handleBotDraw(playerIndex);
+                         return;
+                    }
+
+                    const play = potentialPlays[Math.floor(Math.random() * potentialPlays.length)];
+                    const playableCardIndex = play.index;
+                    
+                    if (botHand.length === 2) {
+                        unoCalled[playerIndex] = true;
+                        showToast(`${playerNames[playerIndex]} gritou UNO!`);
+                    }
+                    const cardToPlay = botHand.splice(playableCardIndex, 1)[0];
+                    
+                    animateCardPlay(renderCard(cardToPlay), playerAreas[playerIndex], discardPileEl).then(() => {
+                        discardPile.push(cardToPlay);
+                        if (hands[playerIndex].length === 0) {
+                            endGame(playerIndex);
+                            return;
+                        }
+                        handleCardEffect(cardToPlay, playerIndex);
+                    });
+                } else {
+                    handleBotDraw(playerIndex);
+                }
+            }
+
+            function handleBotDraw(playerIndex) {
+                 const amountToDraw = drawStack > 0 ? drawStack : 1;
+                if(drawStack > 0) {
+                    const provokerName = playerNames[getNextPlayerIndex(true, -1)];
+                    const randomComment = BOT_COMMENTS.onDraw(provokerName)[Math.floor(Math.random() * BOT_COMMENTS.onDraw(provokerName).length)];
+                    showBotComment(playerIndex, randomComment);
+                }
+                drawCards(playerIndex, amountToDraw);
+                drawStack = 0;
+                nextTurn();
+            }
+            
+            function handleCardEffect(card, playerIndex) {
+                card.originalColor = card.color;
+                if (card.value.includes('Wild') || card.value === 'ColorRoulette') {
+                    if (playerIndex === 0) {
+                         colorModal.classList.remove('hidden');
+                         document.querySelectorAll('.color-btn').forEach(btn => {
+                             btn.onclick = () => {
+                                 card.color = btn.dataset.color; 
+                                 colorModal.classList.add('hidden');
+                                 processRestOfEffect(card, playerIndex);
+                             };
+                         });
+                         return;
+                    } else {
+                        card.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                        updateStatus(`${playerNames[playerIndex]} escolheu ${card.color}.`);
+                        renderAll(); 
+                    }
+                }
+                processRestOfEffect(card, playerIndex);
+            }
+
+            function processRestOfEffect(card, playerIndex) {
+                let requiresNextTurn = true;
+                const targetPlayerIndex = getNextPlayerIndex(true);
+                 switch (card.value) {
+                    case '+2': case '+4': case 'Wild+4': case 'Wild+6': case 'Wild+10':
+                        drawStack += parseInt(card.value.replace('Wild', '').replace('+', ''));
+                        triggerActionBanter('draw', playerIndex, targetPlayerIndex);
+                        break;
+                    case 'Reverse': 
+                         if ([0,1,2,3].filter(i => !eliminatedPlayers[i] && !ranking.some(p=>p.index===i)).length > 2) gameDirection *= -1; 
+                         break;
+                    case 'Skip':
+                        triggerActionBanter('skip', playerIndex, targetPlayerIndex);
+                        currentPlayerIndex = getNextPlayerIndex(); 
+                        break;
+                    case 'SkipAll':
+                        updateStatus(`${playerNames[playerIndex]} pulou todos! Jogue de novo.`);
+                        hasDrawnThisTurn = false; requiresNextTurn = false;
+                        setTimeout(playerTurn, 500);
+                        break;
+                    case 'DiscardAll':
+                        const colorToDiscard = card.originalColor;
+                        let cardsToPlay = [];
+                        for (let i = hands[playerIndex].length - 1; i >= 0; i--) {
+                            if (hands[playerIndex][i].color === colorToDiscard) cardsToPlay.push(hands[playerIndex].splice(i, 1)[0]);
+                        }
+                        if (cardsToPlay.length > 0) discardPile.push(...cardsToPlay);
+                        discardPile[discardPile.length - 1].color = colorToDiscard;
+                        if (hands[playerIndex].length === 0) { endGame(playerIndex); return; }
+                        updateStatus(`${playerNames[playerIndex]} joga de novo.`);
+                        hasDrawnThisTurn = false; requiresNextTurn = false;
+                        renderAll(); setTimeout(playerTurn, 500);
+                        break;
+                    case 'ColorRoulette':
+                        const targetColorCR = card.color;
+                        requiresNextTurn = false;
+                        setTimeout(() => {
+                            if (eliminatedPlayers[targetPlayerIndex]) { nextTurn(); return; }
+                            let drawnCount = 0, foundCard;
+                            showToast(`${playerNames[targetPlayerIndex]} compra até achar ${targetColorCR}...`);
+                            do {
+                                if (deck.length === 0 && discardPile.length <= 1) break;
+                                if (deck.length === 0) {
+                                    deck = discardPile.slice(0, -1).map(c => {
+                                        const cleanCard = { ...c };
+                                        if (cleanCard.value.includes('Wild') || cleanCard.value === 'ColorRoulette') cleanCard.color = 'special';
+                                        delete cleanCard.originalColor;
+                                        return cleanCard;
+                                    });
+                                    shuffleDeck(deck);
+                                    discardPile = [discardPile[discardPile.length - 1]];
+                                }
+                                foundCard = deck.pop();
+                                hands[targetPlayerIndex].push(foundCard);
+                                drawnCount++;
+                            } while (foundCard && foundCard.color !== targetColorCR && foundCard.color !== 'special' && hands[targetPlayerIndex].length < 25);
+                            showToast(`${playerNames[targetPlayerIndex]} comprou ${drawnCount} carta(s)!`);
+                            checkMercyRule(targetPlayerIndex);
+                            renderAll();
+                            currentPlayerIndex = targetPlayerIndex;
+                            nextTurn();
+                        }, 1500);
+                        break;
+                    case '7':
+                        flashScreen(); requiresNextTurn = false;
+                        if (playerIndex === 0) {
+                            const swapOptions = document.getElementById('swap-options');
+                            swapOptions.innerHTML = '';
+                            [1,2,3].forEach(i => {
+                                if(!eliminatedPlayers[i] && !ranking.some(p=>p.index===i)){
+                                    const btn = document.createElement('button');
+                                    btn.className = 'px-4 py-2 bg-blue-500 rounded hover:bg-blue-400';
+                                    btn.textContent = playerNames[i];
+                                    btn.onclick = () => {
+                                        [hands[0], hands[i]] = [hands[i], hands[0]];
+                                        swapModal.classList.add('hidden');
+                                        updateStatus(`Você trocou de mãos com ${playerNames[i]}.`);
+                                        nextTurn();
+                                    };
+                                    swapOptions.appendChild(btn);
+                                }
+                            });
+                            swapModal.classList.remove('hidden');
+                        } else { 
+                            const availablePlayers = [0,1,2,3].filter(i => i !== playerIndex && !eliminatedPlayers[i] && !ranking.some(p=>p.index===i));
+                            if (availablePlayers.length > 0) {
+                                const target = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
+                                const randomComment = BOT_COMMENTS.onSeven(playerNames[target])[Math.floor(Math.random() * BOT_COMMENTS.onSeven(playerNames[target]).length)];
+                                showBotComment(playerIndex, randomComment);
+                                [hands[playerIndex], hands[target]] = [hands[target], hands[playerIndex]];
+                                updateStatus(`${playerNames[playerIndex]} trocou de mãos com ${playerNames[target]}.`);
+                            }
+                            nextTurn();
+                        }
+                        break;
+                    case '0':
+                        flashScreen();
+                        const randomComment = BOT_COMMENTS.onZero()[Math.floor(Math.random() * BOT_COMMENTS.onZero().length)];
+                        showBotComment(playerIndex, randomComment);
+                        const activePlayerIndices = [0,1,2,3].filter(i => !eliminatedPlayers[i] && !ranking.some(p=>p.index===i));
+                        const activeHands = activePlayerIndices.map(i => hands[i]);
+                        if(gameDirection === 1) activeHands.unshift(activeHands.pop());
+                        else activeHands.push(activeHands.shift());
+                        activePlayerIndices.forEach((pIndex, i) => { hands[pIndex] = activeHands[i]; });
+                        updateStatus("TODOS TROCARAM DE MÃOS!");
+                        break;
+                }
+                if (requiresNextTurn) nextTurn();
+            }
+
+            function getNextPlayerIndex(peek = false, directionOffset = 0) {
+                let tempIndex = currentPlayerIndex;
+                let currentDirection = gameDirection * (directionOffset === 0 ? 1 : directionOffset);
+                let nextIndex;
+                do {
+                    nextIndex = tempIndex + currentDirection;
+                    if (nextIndex >= 4) nextIndex = 0;
+                    if (nextIndex < 0) nextIndex = 3;
+                    tempIndex = nextIndex;
+                } while (eliminatedPlayers[nextIndex] || ranking.some(p => p.index === nextIndex));
+                return nextIndex;
+            }
+
+            function checkMercyRule(playerIndex) { 
+                if(hands[playerIndex].length >= 25) {
+                    updateStatus(`MISERICÓRDIA! ${playerNames[playerIndex]} foi eliminado!`);
+                    eliminatedPlayers[playerIndex] = true;
+                    playerAreas[playerIndex].classList.add('eliminated');
+                    triggerEliminationBanter(playerIndex);
+                }
+            }
+            
+            function endGame(winnerIndex) {
+                 if (winnerIndex !== undefined && !ranking.some(p => p.index === winnerIndex)) {
+                    ranking.push({ index: winnerIndex, name: playerNames[winnerIndex] });
+                    playerAreas[winnerIndex].classList.add('finished');
+                 }
+
+                const activePlayerCount = [0,1,2,3].filter(i => !eliminatedPlayers[i] && !ranking.some(p=>p.index===i)).length;
+                
+                if (activePlayerCount <= 1 && !isGameOver) {
+                    isGameOver = true;
+                    const remainingPlayer = [0,1,2,3].find(i => !eliminatedPlayers[i] && !ranking.some(p=>p.index===i));
+                    if (remainingPlayer !== undefined) ranking.push({ index: remainingPlayer, name: playerNames[remainingPlayer] });
+
+                    const rankingListEl = document.getElementById('ranking-list');
+                    rankingListEl.innerHTML = ranking.map((p, i) => {
+                        const medals = ['🥇', '🥈', '🥉', '💩'];
+                        return `<div>${medals[i] || `#${i+1}`} - ${p.name}</div>`;
+                    }).join('');
+                    
+                    gameOverModal.classList.remove('hidden');
+                } else if (winnerIndex !== undefined) {
+                    showToast(`${playerNames[winnerIndex]} terminou em ${ranking.length}º lugar!`);
+                    nextTurn();
+                }
+            }
+
+            function triggerIdleBanter() {
+                if(isGameOver) return;
+                const activeBots = [1,2,3].filter(i => !eliminatedPlayers[i] && !ranking.some(p=>p.index === i));
+                if(activeBots.length < 2) return;
+                
+                const commenterIndex = activeBots[Math.floor(Math.random() * activeBots.length)];
+                let repliedIndex;
+                do {
+                    repliedIndex = activeBots[Math.floor(Math.random() * activeBots.length)];
+                } while (repliedIndex === commenterIndex);
+
+                const starterComment = BOT_COMMENTS.banter_starter[Math.floor(Math.random() * BOT_COMMENTS.banter_starter.length)];
+                showBotComment(commenterIndex, starterComment);
+
+                setTimeout(() => {
+                    const replyComment = BOT_COMMENTS.banter_reply[Math.floor(Math.random() * BOT_COMMENTS.banter_reply.length)];
+                    showBotComment(repliedIndex, replyComment);
+                }, 1500 + Math.random() * 1000);
+            }
+
+            function triggerActionBanter(action, actorIndex, targetIndex) {
+                if(targetIndex === 0 || actorIndex === 0) return; 
+
+                const targetName = playerNames[targetIndex];
+                const actorName = playerNames[actorIndex];
+                const commentPool = BOT_COMMENTS.onActionCard;
+                const randomComment = commentPool(targetName, actorName)[Math.floor(Math.random() * commentPool(targetName, actorName).length)];
+                
+                setTimeout(() => showBotComment(targetIndex, randomComment), 500);
+
+                const activeBots = [1,2,3].filter(i => i !== actorIndex && i !== targetIndex && !eliminatedPlayers[i] && !ranking.some(p=>p.index === i));
+                if (activeBots.length > 0) {
+                    const observerIndex = activeBots[Math.floor(Math.random() * activeBots.length)];
+                    const observerCommentPool = BOT_COMMENTS.onActionCardObservation;
+                    const randomObserverComment = observerCommentPool(targetName)[Math.floor(Math.random() * observerCommentPool(targetName).length)];
+                    setTimeout(() => showBotComment(observerIndex, randomObserverComment), 1800);
+                }
+            }
+
+            function triggerEliminationBanter(eliminatedIndex) {
+                const activeBots = [1,2,3].filter(i => i !== eliminatedIndex && !eliminatedPlayers[i] && !ranking.some(p=>p.index === i));
+                if (activeBots.length > 0) {
+                    const commenterIndex = activeBots[Math.floor(Math.random() * activeBots.length)];
+                    const randomComment = BOT_COMMENTS.elimination_comment(playerNames[eliminatedIndex])[Math.floor(Math.random() * BOT_COMMENTS.elimination_comment(playerNames[eliminatedIndex]).length)];
+                    showBotComment(commenterIndex, randomComment);
+                }
+            }
+
+            function triggerAirtonEvent() {
+                const airtonIndex = playerNames.findIndex(name => name === 'Airton');
+                if (airtonIndex === -1) return;
+                
+                let melanieIndex = playerNames.findIndex(name => name === 'Melanie');
+                let viniciusIndex = playerNames.findIndex(name => name === 'Vinicius');
+                
+                if (melanieIndex === -1 || viniciusIndex === -1) return;
+
+                setTimeout(() => showBotComment(melanieIndex, BOT_COMMENTS.airton.intro.melanie), 1000);
+                setTimeout(() => showBotComment(viniciusIndex, BOT_COMMENTS.airton.intro.vinicius), 3000);
+                setTimeout(() => showBotComment(airtonIndex, BOT_COMMENTS.airton.intro.airton), 5000);
+            }
+        });
+    </script>
+</body>
+</html>
+
